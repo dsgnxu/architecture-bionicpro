@@ -1,2 +1,11 @@
 /postgres-keycloak-data
+/postgres-auth-data
+.env
 2024__yandex-architecture-sso.code-workspace
+__pycache__/
+*.pyc
+.venv/
+bionicpro-auth/wheels/
+keycloak/providers/*.jar
+.DS_Store
+
