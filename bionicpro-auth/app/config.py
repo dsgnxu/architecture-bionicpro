@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     token_encryption_key: str = "change-me-32-byte-key-for-fernet!!"
     database_url: str = "postgresql://auth_user:auth_password@auth_db:5432/auth_db"
 
+    reports_api_url: str = "http://reports-api:8001"
+
     yandex_userinfo_url: str = "https://login.yandex.ru/info?format=json"
 
 

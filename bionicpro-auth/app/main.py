@@ -220,21 +220,61 @@ async def logout(request: Request, response: Response):
 
 
 @app.get("/reports")
-async def reports(session: tuple[str, SessionData] = Depends(require_session)):
-    """Protected resource: only own prosthetic data conceptually (role-gated)."""
+async def reports(
+    request: Request,
+    session: tuple[str, SessionData] = Depends(require_session),
+):
+    """
+    Gateway to reports-api (OLAP).
+    Self-only: identity always taken from session; foreign user_id/username → 403.
+    """
     _, data = session
     if "prothetic_user" not in data.roles and "administrator" not in data.roles:
         raise HTTPException(status_code=403, detail="Insufficient role for reports")
-    return {
-        "owner": data.username,
-        "sub": data.user_sub,
-        "report": {
-            "prosthesis_usage_hours": 42.5,
-            "calibrations": 3,
-            "last_sync": "2026-03-22T12:00:00Z",
-            "note": "Данные только по протезам текущего пользователя",
-        },
-    }
+
+    session_username = data.username
+    if not session_username:
+        raise HTTPException(status_code=403, detail="Session has no username")
+
+    # Reject any attempt to request another user's report via query params
+    q_username = request.query_params.get("username")
+    q_user_id = request.query_params.get("user_id")
+    if q_username and q_username != session_username:
+        raise HTTPException(status_code=403, detail="Access denied: only own report allowed")
+    if q_user_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied: user_id cannot be chosen by client; only own report allowed",
+        )
+
+    params: dict[str, str] = {"username": session_username}
+    if "from" in request.query_params:
+        params["from"] = request.query_params["from"]
+    if "to" in request.query_params:
+        params["to"] = request.query_params["to"]
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.get(
+                f"{settings.reports_api_url.rstrip('/')}/reports",
+                params=params,
+            )
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail=f"reports-api unavailable: {exc}") from exc
+
+    if resp.status_code >= 400:
+        detail: object
+        try:
+            body = resp.json()
+            detail = body.get("detail", body)
+        except Exception:  # noqa: BLE001
+            detail = resp.text
+        raise HTTPException(status_code=resp.status_code, detail=detail)
+
+    payload = resp.json()
+    payload["sub"] = data.user_sub
+    payload["requested_as"] = session_username
+    return payload
 
 
 class ConsentBody(BaseModel):

@@ -18,11 +18,15 @@
 | Сервис | Порт | Назначение |
 |--------|------|------------|
 | frontend | 3000 | React UI (без keycloak-js) |
-| bionicpro-auth | 8000 | BFF: PKCE, сессии, refresh, ротация session id |
+| bionicpro-auth | 8000 | BFF: PKCE, сессии, refresh, `/reports` gateway |
 | keycloak | 8180 | IdP (OTP MFA, LDAP, Yandex broker); host 8180→container 8080 |
 | openldap | 389 | Учётки представительства |
 | auth_db | 5434 | Локальные профили после consent |
 | keycloak_db | 5433 | БД Keycloak |
+| crm_db / telemetry_db | 5435 / 5436 | Источники ETL (Задание 2) |
+| clickhouse | 8123 | OLAP витрина отчётов |
+| airflow-webserver | 8081 | Airflow DAG ETL |
+| reports-api | 8001 | API отчётов из OLAP |
 
 ## Быстрый старт
 
@@ -125,4 +129,56 @@ docker compose up -d --force-recreate keycloak
 - Keycloak Admin: http://localhost:8180 (admin / admin)
 - Auth health: http://localhost:8000/health
 - Login: http://localhost:8000/auth/login
+- Airflow UI: http://localhost:8081 (admin / admin)
+- reports-api health: http://localhost:8001/health
+- ClickHouse HTTP: http://localhost:8123/ping
+
+---
+
+## Задание 2 — Сервис отчётов (Airflow + ClickHouse)
+
+Диаграмма ETL/OLAP: страница **Reports ETL OLAP** в [`docs/BionicPRO_C4_model.drawio.xml`](docs/BionicPRO_C4_model.drawio.xml).
+
+Материалы задания 2 (seed, schema, DAG) — в [`airflow/`](airflow/) (см. [`airflow/README.md`](airflow/README.md)). API отчётов — [`reports-api/`](reports-api/).
+
+### Компоненты
+
+| Сервис | Порт | Назначение |
+|--------|------|------------|
+| crm_db | 5435 | Mock CRM (`airflow/crm-db`) |
+| telemetry_db | 5436 | Mock телеметрия (`airflow/telemetry-db`) |
+| clickhouse | 8123 | OLAP + витрина (`airflow/clickhouse`) |
+| airflow-webserver | 8081 | DAG `bionicpro_reports_etl` |
+| reports-api | 8001 | `GET /reports` из витрины |
+| bionicpro-auth | 8000 | Gateway `/reports` (self-only + session) |
+
+### ETL
+
+DAG [`airflow/dags/bionicpro_reports_etl.py`](airflow/dags/bionicpro_reports_etl.py):
+
+1. Extract CRM + telemetry  
+2. Transform (агрегаты по username + день + join CRM)  
+3. Load `bionicpro.report_mart`  
+4. Обновить `etl_watermark.processed_to`  
+
+Расписание: `0 2 * * *` (ежедневно в 02:00). После старта вручную:
+
+```bash
+# при проблемах DNS в Docker:
+./reports-api/scripts/download-wheels.sh
+./airflow/scripts/download-wheels.sh
+
+docker compose up --build -d
+# UI http://localhost:8081 → DAGs → bionicpro_reports_etl → Trigger
+docker compose exec airflow-scheduler airflow dags trigger bionicpro_reports_etl
+```
+
+### Проверка отчёта
+
+1. Залогиньтесь как `prothetic1` / `prothetic123` (или LDAP `john.doe`).  
+2. Дождитесь успешного DAG Run.  
+3. UI → **Download Report** → данные из OLAP.  
+4. Без логина `/reports` → 401.  
+5. `?username=other` через BFF → 403.  
+6. `?to=` дата после watermark → 409.
 

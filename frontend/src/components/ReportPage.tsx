@@ -99,17 +99,42 @@ const ReportPage: React.FC = () => {
     try {
       setReportLoading(true);
       setError(null);
+      setReport(null);
       const response = await fetch(`${API_URL}/reports`, {
         credentials: 'include',
       });
       if (response.status === 401) {
         setMe(null);
-        setError('Session expired — please login again');
+        setError('Не аутентифицирован — войдите, чтобы получить отчёт');
+        return;
+      }
+      if (response.status === 403) {
+        const body = await response.json().catch(() => ({}));
+        setError(
+          typeof body.detail === 'string'
+            ? body.detail
+            : 'Доступ запрещён: можно запросить только свой отчёт'
+        );
+        return;
+      }
+      if (response.status === 404) {
+        setError('В OLAP пока нет данных по вашему пользователю (проверьте seed / ETL)');
+        return;
+      }
+      if (response.status === 409) {
+        const body = await response.json().catch(() => ({}));
+        const detail =
+          typeof body.detail === 'string'
+            ? body.detail
+            : 'Данные за запрошенный период ещё не обработаны Airflow';
+        setError(detail);
         return;
       }
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
-        throw new Error(body.detail || 'Failed to download report');
+        throw new Error(
+          typeof body.detail === 'string' ? body.detail : 'Failed to download report'
+        );
       }
       const data = await response.json();
       setReport(data);
@@ -212,6 +237,11 @@ const ReportPage: React.FC = () => {
           </div>
         )}
 
+        <p className="text-sm text-gray-600 mb-3">
+          Отчёт читается из витрины ClickHouse (OLAP). Доступны только периоды,
+          уже обработанные Airflow ETL.
+        </p>
+
         <button
           onClick={downloadReport}
           disabled={reportLoading}
@@ -219,7 +249,7 @@ const ReportPage: React.FC = () => {
             reportLoading ? 'opacity-50 cursor-not-allowed' : ''
           }`}
         >
-          {reportLoading ? 'Generating Report...' : 'Download Report'}
+          {reportLoading ? 'Loading report from OLAP...' : 'Download Report'}
         </button>
 
         {error && (
@@ -227,9 +257,14 @@ const ReportPage: React.FC = () => {
         )}
 
         {report != null && (
-          <pre className="mt-4 p-4 bg-gray-50 rounded text-xs overflow-auto">
-            {JSON.stringify(report, null, 2)}
-          </pre>
+          <div className="mt-4 space-y-3">
+            <div className="p-4 bg-blue-50 rounded text-sm">
+              <div className="font-semibold mb-1">Сводка (OLAP mart)</div>
+              <pre className="text-xs overflow-auto whitespace-pre-wrap">
+                {JSON.stringify(report, null, 2)}
+              </pre>
+            </div>
+          </div>
         )}
       </div>
     </div>
