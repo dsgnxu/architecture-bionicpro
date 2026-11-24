@@ -15,9 +15,20 @@ const ReportPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [reportLoading, setReportLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [report, setReport] = useState<unknown>(null);
+  const [downloadStatus, setDownloadStatus] = useState<string | null>(null);
   const [showConsent, setShowConsent] = useState(false);
   const [consentDone, setConsentDone] = useState(false);
+
+  const triggerFileDownload = (filename: string, blob: Blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
 
   const fetchMe = useCallback(async () => {
     try {
@@ -99,7 +110,7 @@ const ReportPage: React.FC = () => {
     try {
       setReportLoading(true);
       setError(null);
-      setReport(null);
+      setDownloadStatus(null);
       const response = await fetch(`${API_URL}/reports`, {
         credentials: 'include',
       });
@@ -130,14 +141,40 @@ const ReportPage: React.FC = () => {
         setError(detail);
         return;
       }
+      if (response.status === 503) {
+        const body = await response.json().catch(() => ({}));
+        setError(
+          typeof body.detail === 'string'
+            ? body.detail
+            : 'Нет кэша в S3 и OLAP недоступен'
+        );
+        return;
+      }
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
         throw new Error(
           typeof body.detail === 'string' ? body.detail : 'Failed to download report'
         );
       }
-      const data = await response.json();
-      setReport(data);
+      const meta = await response.json();
+      const cdnUrl = meta.cdn_url as string | undefined;
+      if (!cdnUrl) {
+        throw new Error('API не вернул cdn_url');
+      }
+      // Прозрачно для клиента: скачиваем файл с CDN, не раскрываем JSON в UI
+      const cdnResp = await fetch(cdnUrl);
+      if (!cdnResp.ok) {
+        throw new Error(`CDN fetch failed: ${cdnResp.status}`);
+      }
+      const blob = await cdnResp.blob();
+      const who = (meta.owner as string) || me?.username || 'user';
+      const wm = (meta.watermark as string) || 'latest';
+      triggerFileDownload(`bionicpro-report-${who}-${wm}.json`, blob);
+      setDownloadStatus(
+        meta.cached
+          ? 'Файл скачан с CDN (S3 cache hit — без OLAP).'
+          : 'Файл сформирован, сохранён в S3 и скачан с CDN.'
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -238,8 +275,8 @@ const ReportPage: React.FC = () => {
         )}
 
         <p className="text-sm text-gray-600 mb-3">
-          Отчёт читается из витрины ClickHouse (OLAP). Доступны только периоды,
-          уже обработанные Airflow ETL.
+          Отчёт скачивается файлом с CDN. Повторный запрос берёт готовый объект из
+          S3 (даже если ClickHouse выключен).
         </p>
 
         <button
@@ -249,21 +286,16 @@ const ReportPage: React.FC = () => {
             reportLoading ? 'opacity-50 cursor-not-allowed' : ''
           }`}
         >
-          {reportLoading ? 'Loading report from OLAP...' : 'Download Report'}
+          {reportLoading ? 'Downloading...' : 'Download Report'}
         </button>
 
         {error && (
           <div className="mt-4 p-4 bg-red-100 text-red-700 rounded">{error}</div>
         )}
 
-        {report != null && (
-          <div className="mt-4 space-y-3">
-            <div className="p-4 bg-blue-50 rounded text-sm">
-              <div className="font-semibold mb-1">Сводка (OLAP mart)</div>
-              <pre className="text-xs overflow-auto whitespace-pre-wrap">
-                {JSON.stringify(report, null, 2)}
-              </pre>
-            </div>
+        {downloadStatus && (
+          <div className="mt-4 p-3 bg-green-50 text-green-800 rounded text-sm">
+            {downloadStatus}
           </div>
         )}
       </div>

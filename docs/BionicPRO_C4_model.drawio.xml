@@ -1,6 +1,6 @@
-<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 YaBrowser/24.10.0.0 Safari/537.36" pages="3">
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 YaBrowser/24.10.0.0 Safari/537.36" pages="4">
   <diagram name="Page-1" id="Vdj-dLDs9ZxfFK_ICv-k">
-    <mxGraphModel dx="3353" dy="3169" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="2012" dy="2369" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -40,25 +40,35 @@
         </object>
         <object placeholders="1" c4Name="BionicPRO" c4Type="SystemScopeBoundary" c4Application="Software System" label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;&lt;div style=&quot;text-align: left&quot;&gt;%c4Name%&lt;/div&gt;&lt;/b&gt;&lt;/font&gt;&lt;div style=&quot;text-align: left&quot;&gt;[%c4Application%]&lt;/div&gt;" id="Lhtp9tOnbV0N8Cz71-gY-13">
           <mxCell parent="1" style="rounded=1;fontSize=11;whiteSpace=wrap;html=1;dashed=1;arcSize=20;fillColor=none;strokeColor=#666666;fontColor=#333333;labelBackgroundColor=none;align=left;verticalAlign=bottom;labelBorderColor=none;spacingTop=0;spacing=10;dashPattern=8 4;metaEdit=1;rotatable=0;perimeter=rectanglePerimeter;noLabel=0;labelPadding=0;allowArrows=0;connectable=0;expand=0;recursiveResize=0;editable=1;pointerEvents=0;absoluteArcSize=1;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" vertex="1">
-            <mxGeometry height="1280" width="1280" x="610" y="-80" as="geometry" />
+            <mxGeometry height="1480" width="1400" x="610" y="-80" as="geometry" />
           </mxCell>
         </object>
         <mxCell id="-s9W17W-NFw-Ta7AQgpa-4" edge="1" parent="1" source="Lhtp9tOnbV0N8Cz71-gY-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="Lhtp9tOnbV0N8Cz71-gY-12">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <object placeholders="1" c4Name="API (reports-api)" c4Type="Container" c4Technology="FastAPI" c4Description="GET /reports — отчёт пользователя из OLAP-витрины без тяжёлых вычислений. Self-only через BFF-сессию" label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="Lhtp9tOnbV0N8Cz71-gY-17">
+        <object placeholders="1" c4Name="API (reports-api)" c4Type="Container" c4Technology="FastAPI" c4Description="GET /reports: S3 hit → cdn_url; miss → OLAP → PUT S3 → cdn_url. Self-only через BFF" label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="Lhtp9tOnbV0N8Cz71-gY-17">
           <mxCell parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;labelBackgroundColor=none;fillColor=#23A2D9;fontColor=#ffffff;align=center;arcSize=10;strokeColor=#0E7DAD;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" vertex="1">
-            <mxGeometry height="130" width="260" x="820" y="780" as="geometry" />
+            <mxGeometry height="130" width="280" x="820" y="780" as="geometry" />
           </mxCell>
         </object>
-        <object placeholders="1" c4Name="ClickHouse OLAP" c4Type="Container" c4Technology="ClickHouse" c4Description="Витрина report_mart (по username) + etl_watermark. Готовые агрегаты для /reports" label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="p1-clickhouse">
+        <object placeholders="1" c4Name="ClickHouse OLAP" c4Type="Container" c4Technology="ClickHouse" c4Description="Витрина report_mart + etl_watermark. Читается только на cache miss" label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="p1-clickhouse">
           <mxCell parent="1" style="shape=cylinder3;size=15;whiteSpace=wrap;html=1;boundedLbl=1;rounded=0;labelBackgroundColor=none;fillColor=#068458;fontSize=12;fontColor=#ffffff;align=center;strokeColor=#055C3D;metaEdit=1;points=[[0.5,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.5,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];resizable=0;" vertex="1">
-            <mxGeometry height="130" width="260" x="640" y="1015" as="geometry" />
+            <mxGeometry height="130" width="260" x="650" y="1000" as="geometry" />
           </mxCell>
         </object>
-        <object placeholders="1" c4Name="Apache Airflow" c4Type="Container" c4Technology="DAG bionicpro_reports_etl @ 02:00" c4Description="ETL: Extract CRM+telemetry → Transform (агрегат по клиенту/дню) → Load витрины + watermark" label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="p1-airflow">
+        <object placeholders="1" c4Name="Apache Airflow" c4Type="Container" c4Technology="DAG bionicpro_reports_etl @ 02:00" c4Description="ETL: Extract CRM+telemetry → Transform → Load витрины + watermark" label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="p1-airflow">
           <mxCell parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;labelBackgroundColor=none;fillColor=#068458;fontColor=#ffffff;align=center;arcSize=10;strokeColor=#055C3D;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" vertex="1">
-            <mxGeometry height="140" width="280" x="1020" y="1010" as="geometry" />
+            <mxGeometry height="140" width="280" x="1020" y="997" as="geometry" />
+          </mxCell>
+        </object>
+        <object placeholders="1" c4Name="S3 / MinIO" c4Type="Container" c4Technology="LocalStack S3 API" c4Description="Bucket bionicpro-reports. Ключ users/{user}/wm={date}/report.json + latest.json pointer" label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="p1-minio">
+          <mxCell parent="1" style="shape=cylinder3;size=15;whiteSpace=wrap;html=1;boundedLbl=1;rounded=0;labelBackgroundColor=none;fillColor=#B85450;fontSize=12;fontColor=#ffffff;align=center;strokeColor=#8A3B38;metaEdit=1;points=[[0.5,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.5,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];resizable=0;" vertex="1">
+            <mxGeometry height="140" width="280" x="640" y="1220" as="geometry" />
+          </mxCell>
+        </object>
+        <object placeholders="1" c4Name="CDN Nginx" c4Type="Container" c4Technology="proxy_cache :8082" c4Description="Reverse proxy к S3 + кеш статики. Отдаёт report.json клиенту" label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="p1-cdn">
+          <mxCell parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;labelBackgroundColor=none;fillColor=#B85450;fontColor=#ffffff;align=center;arcSize=10;strokeColor=#8A3B38;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" vertex="1">
+            <mxGeometry height="130" width="280" x="1050" y="1224" as="geometry" />
           </mxCell>
         </object>
         <mxCell id="p1-e-crmdb-af" edge="1" parent="1" source="-s9W17W-NFw-Ta7AQgpa-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#068458;strokeWidth=2;" target="p1-airflow">
@@ -84,7 +94,9 @@
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="p1-e-af-ch-l" connectable="0" parent="p1-e-af-ch" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Load report_mart" vertex="1">
-          <mxGeometry relative="1" as="geometry" />
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint y="-16" as="offset" />
+          </mxGeometry>
         </mxCell>
         <mxCell id="p1-e-api-ch" edge="1" parent="1" source="Lhtp9tOnbV0N8Cz71-gY-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#068458;strokeWidth=2;" target="p1-clickhouse">
           <mxGeometry relative="1" as="geometry">
@@ -94,7 +106,50 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="p1-e-api-ch-l" connectable="0" parent="p1-e-api-ch" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="SELECT витрины&lt;br&gt;(без JOIN в runtime)" vertex="1">
+        <mxCell id="p1-e-api-ch-l" connectable="0" parent="p1-e-api-ch" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="SELECT витрины&lt;br&gt;(только cache miss)" vertex="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-e-api-s3" edge="1" parent="1" source="Lhtp9tOnbV0N8Cz71-gY-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#B85450;strokeWidth=2;exitX=0.75;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" target="p1-minio">
+          <mxGeometry relative="1" x="0.0929" as="geometry">
+            <Array as="points">
+              <mxPoint x="1030" y="970" />
+              <mxPoint x="970" y="970" />
+              <mxPoint x="970" y="1170" />
+              <mxPoint x="780" y="1170" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="p1-e-api-s3-l" connectable="0" parent="p1-e-api-s3" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="HEAD/PUT object&lt;br&gt;+ latest pointer" vertex="1">
+          <mxGeometry relative="1" x="0.0929" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-e-cdn-s3" edge="1" parent="1" source="p1-cdn" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#B85450;strokeWidth=2;" target="p1-minio">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-e-cdn-s3-l" connectable="0" parent="p1-e-cdn-s3" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="proxy_cache" vertex="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint y="-10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="p1-e-api-cdn" edge="1" parent="1" source="Lhtp9tOnbV0N8Cz71-gY-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#B85450;dashed=1;" target="p1-cdn">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1160" y="845" />
+              <mxPoint x="1160" y="1290" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="p1-e-api-cdn-l" connectable="0" parent="p1-e-api-cdn" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="отдаёт cdn_url" vertex="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-e-fe-cdn" edge="1" parent="1" source="identity-reports-frontend" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#B85450;strokeWidth=2;" target="p1-cdn">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="610" y="240" />
+              <mxPoint x="610" y="1290" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="p1-e-fe-cdn-l" connectable="0" parent="p1-e-fe-cdn" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="скачивает файл&lt;br&gt;report.json с CDN" vertex="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="p1-e-fe-api" edge="1" parent="1" source="identity-reports-frontend" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#068458;strokeWidth=2;dashed=1;" target="Lhtp9tOnbV0N8Cz71-gY-17">
@@ -105,7 +160,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="p1-e-fe-api-l" connectable="0" parent="p1-e-fe-api" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Download Report&lt;br&gt;через BFF → /reports" vertex="1">
+        <mxCell id="p1-e-fe-api-l" connectable="0" parent="p1-e-fe-api" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="BFF → GET /reports&lt;br&gt;получает cdn_url" vertex="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="-s9W17W-NFw-Ta7AQgpa-1" edge="1" parent="1" source="Lhtp9tOnbV0N8Cz71-gY-20" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="Lhtp9tOnbV0N8Cz71-gY-17">
@@ -419,6 +474,75 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="e-af-ch-l" connectable="0" parent="e-af-ch" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Load mart + watermark" vertex="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="reports-s3-cdn" name="Reports S3 CDN">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="s3-title" value="Задание 3: кэш отчётов в S3 (LocalStack/MinIO API) + CDN (Nginx proxy_cache)" style="text;html=1;fontSize=18;fontStyle=1;align=left;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="1000" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="s3-note" value="Ключ: users/{username}/wm={watermark}/report.json&lt;br&gt;Смена ETL watermark → новый ключ → cache miss → regenerate.&lt;br&gt;CDN TTL 10m (X-Cache-Status: HIT/MISS)." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;align=left;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="60" width="520" height="80" as="geometry" />
+        </mxCell>
+        <object placeholders="1" c4Name="reports-api" c4Type="Container" c4Technology="FastAPI" c4Description="1) HEAD S3 2) hit→cdn_url 3) miss→OLAP→PUT S3→cdn_url" label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="s3-api">
+          <mxCell parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;labelBackgroundColor=none;fillColor=#068458;fontColor=#ffffff;align=center;arcSize=10;strokeColor=#055C3D;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" vertex="1">
+            <mxGeometry height="130" width="260" x="40" y="200" as="geometry" />
+          </mxCell>
+        </object>
+        <object placeholders="1" c4Name="ClickHouse" c4Type="Container" c4Technology="OLAP" c4Description="Только на cache miss" label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="s3-ch">
+          <mxCell parent="1" style="shape=cylinder3;size=15;whiteSpace=wrap;html=1;boundedLbl=1;rounded=0;labelBackgroundColor=none;fillColor=#23A2D9;fontSize=12;fontColor=#ffffff;align=center;strokeColor=#0E7DAD;metaEdit=1;points=[[0.5,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.5,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];resizable=0;" vertex="1">
+            <mxGeometry height="120" width="220" x="40" y="400" as="geometry" />
+          </mxCell>
+        </object>
+        <object placeholders="1" c4Name="S3 / MinIO" c4Type="Container" c4Technology="LocalStack S3 API" c4Description="Bucket bionicpro-reports + latest.json pointer; public-read" label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="s3-minio">
+          <mxCell parent="1" style="shape=cylinder3;size=15;whiteSpace=wrap;html=1;boundedLbl=1;rounded=0;labelBackgroundColor=none;fillColor=#B85450;fontSize=12;fontColor=#ffffff;align=center;strokeColor=#8A3B38;metaEdit=1;points=[[0.5,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.5,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];resizable=0;" vertex="1">
+            <mxGeometry height="120" width="240" x="400" y="200" as="geometry" />
+          </mxCell>
+        </object>
+        <object placeholders="1" c4Name="CDN Nginx" c4Type="Container" c4Technology="proxy_cache :8082" c4Description="Reverse proxy к S3 + кеш статики (X-Cache-Status HIT/MISS)" label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="s3-cdn">
+          <mxCell parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;labelBackgroundColor=none;fillColor=#B85450;fontColor=#ffffff;align=center;arcSize=10;strokeColor=#8A3B38;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" vertex="1">
+            <mxGeometry height="120" width="240" x="740" y="200" as="geometry" />
+          </mxCell>
+        </object>
+        <object placeholders="1" c4Name="Frontend" c4Type="Container" c4Technology="React" c4Description="Прозрачно: получает cdn_url и скачивает файл (без показа JSON на странице)" label="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;%c4Name%&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[%c4Type%: %c4Technology%]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px&quot;&gt;&lt;font color=&quot;#E6E6E6&quot;&gt;%c4Description%&lt;/font&gt;&lt;/div&gt;" id="s3-fe">
+          <mxCell parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;labelBackgroundColor=none;fillColor=#23A2D9;fontColor=#ffffff;align=center;arcSize=10;strokeColor=#0E7DAD;metaEdit=1;resizable=0;points=[[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0.25,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0],[0,0.25,0]];" vertex="1">
+            <mxGeometry height="110" width="220" x="1060" y="205" as="geometry" />
+          </mxCell>
+        </object>
+        <mxCell id="e-api-ch" edge="1" parent="1" source="s3-api" target="s3-ch" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-api-ch-l" connectable="0" parent="e-api-ch" style="edgeLabel;html=1;" value="miss only" vertex="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-api-s3" edge="1" parent="1" source="s3-api" target="s3-minio" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#068458;strokeWidth=2;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-api-s3-l" connectable="0" parent="e-api-s3" style="edgeLabel;html=1;" value="HEAD/PUT object" vertex="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-cdn-s3" edge="1" parent="1" source="s3-cdn" target="s3-minio" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-cdn-s3-l" connectable="0" parent="e-cdn-s3" style="edgeLabel;html=1;" value="proxy_cache" vertex="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-api-fe" edge="1" parent="1" source="s3-api" target="s3-fe" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-api-fe-l" connectable="0" parent="e-api-fe" style="edgeLabel;html=1;" value="cdn_url" vertex="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-fe-cdn" edge="1" parent="1" source="s3-fe" target="s3-cdn" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#068458;strokeWidth=2;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-fe-cdn-l" connectable="0" parent="e-fe-cdn" style="edgeLabel;html=1;" value="GET report.json" vertex="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
       </root>

@@ -132,6 +132,8 @@ docker compose up -d --force-recreate keycloak
 - Airflow UI: http://localhost:8081 (admin / admin)
 - reports-api health: http://localhost:8001/health
 - ClickHouse HTTP: http://localhost:8123/ping
+- S3 (LocalStack): http://localhost:9002 (keys test/test)
+- CDN (Nginx): http://localhost:8082/health
 
 ---
 
@@ -149,8 +151,10 @@ docker compose up -d --force-recreate keycloak
 | telemetry_db | 5436 | Mock телеметрия (`airflow/telemetry-db`) |
 | clickhouse | 8123 | OLAP + витрина (`airflow/clickhouse`) |
 | airflow-webserver | 8081 | DAG `bionicpro_reports_etl` |
-| reports-api | 8001 | `GET /reports` из витрины |
+| reports-api | 8001 | `GET /reports` (+ S3 cache / CDN URL) |
 | bionicpro-auth | 8000 | Gateway `/reports` (self-only + session) |
+| minio (LocalStack S3) | 9002 | S3-совместимое хранилище отчётов |
+| cdn-nginx | 8082 | CDN reverse proxy + cache |
 
 ### ETL
 
@@ -181,4 +185,46 @@ docker compose exec airflow-scheduler airflow dags trigger bionicpro_reports_etl
 4. Без логина `/reports` → 401.  
 5. `?username=other` через BFF → 403.  
 6. `?to=` дата после watermark → 409.
+
+---
+
+## Задание 3 — S3 + CDN (снижение нагрузки на OLAP)
+
+Диаграмма: страница **Reports S3 CDN** в [`docs/BionicPRO_C4_model.drawio.xml`](docs/BionicPRO_C4_model.drawio.xml).  
+CDN: [`cdn/nginx.conf`](cdn/nginx.conf).
+
+### Поток
+
+1. `GET /reports` (через BFF) → reports-api смотрит объект в MinIO.  
+2. **Hit** → `{ cdn_url, cached: true }` без ClickHouse.  
+3. **Miss** → SELECT витрины → PUT JSON в S3 → `{ cdn_url, cached: false }`.  
+4. UI/клиент качает JSON по `cdn_url` (Nginx `proxy_cache`).
+
+### Ключ объекта
+
+```text
+users/{username}/wm={YYYY-MM-DD}/report.json
+```
+
+Смена `etl_watermark` → новый ключ → естественная инвалидация CDN/S3-кэша.
+
+### Проверка hit/miss (в т.ч. без OLAP)
+
+UI только скачивает `.json` файл (не показывает содержимое на странице).
+
+```bash
+# 1) Первый запрос — generate → S3 (cached:false)
+curl -s 'http://localhost:8001/reports?username=prothetic1' | python3 -m json.tool
+
+# 2) Выключить ClickHouse — повтор всё равно отдаёт CDN URL из S3 pointer
+docker compose stop clickhouse
+curl -s 'http://localhost:8001/reports?username=prothetic1' | python3 -m json.tool
+# ожидаем: "cached": true, "cdn_url": "http://localhost:8082/..."
+
+# 3) Скачать файл напрямую с CDN (без UI)
+curl -OJ "$(curl -s 'http://localhost:8001/reports?username=prothetic1' | python3 -c 'import sys,json; print(json.load(sys.stdin)["cdn_url"])')"
+
+# 4) Вернуть OLAP
+docker compose start clickhouse
+```
 

@@ -11,5 +11,12 @@ class Settings(BaseSettings):
     clickhouse_password: str = "clickhouse"
     etl_pipeline: str = "bionicpro_reports_etl"
 
+    s3_endpoint: str = "http://minio:4566"
+    s3_access_key: str = "test"
+    s3_secret_key: str = "test"
+    s3_bucket: str = "bionicpro-reports"
+    s3_region: str = "us-east-1"
+    cdn_public_url: str = "http://localhost:8082"
+
 
 settings = Settings()
