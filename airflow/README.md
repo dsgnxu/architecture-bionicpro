@@ -1,27 +1,29 @@
-# Airflow + OLAP (Задание 2)
+# Airflow + OLAP (Задания 2–4)
 
 Материалы ETL/OLAP для отчётов BionicPRO — в этой папке (не в корне репозитория).
 
 ```
 airflow/
-  dags/bionicpro_reports_etl.py   # DAG: CRM + telemetry → ClickHouse mart
-  crm-db/init.sql                 # seed CRM (клиенты / модели протезов)
-  telemetry-db/init.sql           # seed телеметрии (миосигналы / usage)
-  clickhouse/init/01_schema.sql   # report_mart + etl_watermark
-  Dockerfile / requirements.txt    # Airflow + psycopg2 (ClickHouse через HTTP)
+  dags/bionicpro_reports_etl.py   # DAG: telemetry → telemetry_daily (+ watermark)
+  crm-db/init.sql                 # seed CRM + publication для Debezium
+  telemetry-db/init.sql           # seed телеметрии
+  clickhouse/init/01_schema.sql   # KafkaEngine, MV, report_mart_cdc
+  Dockerfile / requirements.txt
   scripts/download-wheels.sh
   data/                           # runtime volumes (gitignore)
 ```
 
-Отдельный API чтения витрины: [`../reports-api`](../reports-api) (FastAPI → ClickHouse).
+CDC (Debezium/Kafka): [`../cdc`](../cdc).  
+API витрины: [`../reports-api`](../reports-api) → `report_mart_cdc`.
 
 ## DAG
 
 - id: `bionicpro_reports_etl`
 - schedule: `0 2 * * *`
-- шаги: ensure schema → extract CRM || extract telemetry → transform_and_load (+ watermark)
+- шаги: ensure schema → extract telemetry → load `telemetry_daily` (+ watermark)
+- CRM dim приходит через CDC → `crm_clients`; MV собирает `report_mart_cdc`
 
-ClickHouse: user `default` / password `clickhouse` (через env в compose).
+ClickHouse: user `default` / password `clickhouse`.
 
 ## UI
 

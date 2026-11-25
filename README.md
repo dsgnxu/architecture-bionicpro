@@ -23,9 +23,10 @@
 | openldap | 389 | Учётки представительства |
 | auth_db | 5434 | Локальные профили после consent |
 | keycloak_db | 5433 | БД Keycloak |
-| crm_db / telemetry_db | 5435 / 5436 | Источники ETL (Задание 2) |
-| clickhouse | 8123 | OLAP витрина отчётов |
-| airflow-webserver | 8081 | Airflow DAG ETL |
+| crm_db / telemetry_db | 5435 / 5436 | Источники ETL / CDC (Задания 2–4) |
+| clickhouse | 8123 | OLAP витрина отчётов (`report_mart_cdc`) |
+| airflow-webserver | 8081 | Airflow DAG (telemetry → CH) |
+| kafka / connect | 9092 / 8083 | CDC CRM: Kafka + Debezium |
 | reports-api | 8001 | API отчётов из OLAP |
 
 ## Быстрый старт
@@ -134,6 +135,7 @@ docker compose up -d --force-recreate keycloak
 - ClickHouse HTTP: http://localhost:8123/ping
 - S3 (LocalStack): http://localhost:9002 (keys test/test)
 - CDN (Nginx): http://localhost:8082/health
+- Kafka Connect: http://localhost:8083/
 
 ---
 
@@ -147,10 +149,12 @@ docker compose up -d --force-recreate keycloak
 
 | Сервис | Порт | Назначение |
 |--------|------|------------|
-| crm_db | 5435 | Mock CRM (`airflow/crm-db`) |
+| crm_db | 5435 | Mock CRM + logical CDC (`airflow/crm-db`) |
 | telemetry_db | 5436 | Mock телеметрия (`airflow/telemetry-db`) |
-| clickhouse | 8123 | OLAP + витрина (`airflow/clickhouse`) |
-| airflow-webserver | 8081 | DAG `bionicpro_reports_etl` |
+| clickhouse | 8123 | OLAP + `report_mart_cdc` (`airflow/clickhouse`) |
+| kafka | 9092 | Apache Kafka (KRaft) |
+| connect | 8083 | Debezium Postgres connector |
+| airflow-webserver | 8081 | DAG `bionicpro_reports_etl` (telemetry only) |
 | reports-api | 8001 | `GET /reports` (+ S3 cache / CDN URL) |
 | bionicpro-auth | 8000 | Gateway `/reports` (self-only + session) |
 | minio (LocalStack S3) | 9002 | S3-совместимое хранилище отчётов |
@@ -158,11 +162,11 @@ docker compose up -d --force-recreate keycloak
 
 ### ETL
 
-DAG [`airflow/dags/bionicpro_reports_etl.py`](airflow/dags/bionicpro_reports_etl.py):
+DAG [`airflow/dags/bionicpro_reports_etl.py`](airflow/dags/bionicpro_reports_etl.py) (после Задания 4 — без mass SELECT из CRM):
 
-1. Extract CRM + telemetry  
-2. Transform (агрегаты по username + день + join CRM)  
-3. Load `bionicpro.report_mart`  
+1. Extract telemetry  
+2. Агрегаты по username + день → `telemetry_daily`  
+3. MV в ClickHouse JOIN с `crm_clients` (CDC) → `report_mart_cdc`  
 4. Обновить `etl_watermark.processed_to`  
 
 Расписание: `0 2 * * *` (ежедневно в 02:00). После старта вручную:
@@ -226,5 +230,50 @@ curl -OJ "$(curl -s 'http://localhost:8001/reports?username=prothetic1' | python
 
 # 4) Вернуть OLAP
 docker compose start clickhouse
+```
+
+---
+
+## Задание 4 — CDC CRM (Debezium → Kafka → ClickHouse)
+
+Диаграмма: страница **CRM CDC Kafka** (+ синие блоки на Page-1) в [`docs/BionicPRO_C4_model.drawio.xml`](docs/BionicPRO_C4_model.drawio.xml).  
+Конфиг коннектора: [`cdc/`](cdc/).
+
+### Поток
+
+1. `crm_db` с `wal_level=logical` + publication `dbz_crm_publication` на `clients`.  
+2. Debezium Connect читает WAL → Kafka topic `crm.public.clients`.  
+3. ClickHouse `KafkaEngine` (`crm_clients_queue`) → MV → `crm_clients`.  
+4. Airflow грузит только telemetry → `telemetry_daily`; MV → `report_mart_cdc`.  
+5. `reports-api` читает `report_mart_cdc` (без SELECT из CRM OLTP).
+
+### Подъём и регистрация коннектора
+
+```bash
+# Если crm_db уже был без logical decoding — recreate + bootstrap publication:
+docker compose up -d --force-recreate crm_db kafka connect clickhouse
+docker compose exec -T crm_db psql -U crm -d crm < cdc/bootstrap-crm-replication.sql
+
+docker compose up -d
+./cdc/register.sh
+# ожидаем connector.state RUNNING
+```
+
+### Проверка CDC
+
+```bash
+# 1) Изменить CRM (OLTP) — без выгрузки в ETL
+docker compose exec -T crm_db psql -U crm -d crm \
+  -c "UPDATE clients SET crm_status='vip' WHERE username='prothetic1';"
+
+# 2) Дождаться появления в ClickHouse dim
+docker compose exec clickhouse clickhouse-client --password clickhouse \
+  --query "SELECT user_id, username, crm_status FROM bionicpro.crm_clients FINAL ORDER BY username"
+
+# 3) Пересобрать витрину (telemetry + MV join)
+docker compose exec airflow-scheduler airflow dags trigger bionicpro_reports_etl
+
+# 4) API читает новую витрину
+curl -s 'http://localhost:8001/reports?username=prothetic1' | python3 -m json.tool
 ```
 

@@ -1,7 +1,9 @@
 """
-ETL: CRM + telemetry (Postgres) → report_mart (ClickHouse) + etl_watermark.
-Schedule: daily at 02:00. Report API serves only periods <= watermark.
+ETL: telemetry (Postgres) → telemetry_daily (ClickHouse).
+CRM dimensions arrive via Debezium CDC → Kafka → crm_clients.
+MV report_mart_cdc_mv joins telemetry INSERT with crm_clients.
 
+Schedule: daily at 02:00. Report API serves only periods <= watermark.
 ClickHouse is accessed via HTTP API (stdlib urllib) — no extra pip packages.
 """
 from __future__ import annotations
@@ -20,7 +22,6 @@ default_args = {
     "start_date": datetime(2025, 1, 1),
 }
 
-CRM_DSN = "host=crm_db port=5432 dbname=crm user=crm password=crm"
 TEL_DSN = "host=telemetry_db port=5432 dbname=telemetry user=telemetry password=telemetry"
 CH_URL = "http://clickhouse:8123/"
 CH_USER = "default"
@@ -71,6 +72,7 @@ def _ch_post(sql: str, data: bytes | None = None, database: str | None = CH_DB) 
 
 def ensure_olap_schema(**_context) -> None:
     _ch_post("CREATE DATABASE IF NOT EXISTS bionicpro", database=None)
+    # Legacy table (unused by API after Assignment 4)
     _ch_post(
         """
         CREATE TABLE IF NOT EXISTS report_mart
@@ -99,30 +101,125 @@ def ensure_olap_schema(**_context) -> None:
         ORDER BY pipeline
         """
     )
-
-
-def extract_crm(**_context) -> list[dict]:
-    conn = psycopg2.connect(CRM_DSN)
-    try:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT user_id, username, crm_status, prosthesis_model
-                FROM clients
-                """
-            )
-            rows = cur.fetchall()
-    finally:
-        conn.close()
-    return [
-        {
-            "user_id": r[0],
-            "username": r[1],
-            "crm_status": r[2],
-            "prosthesis_model": r[3],
-        }
-        for r in rows
-    ]
+    # CDC dim + Kafka queue (may already exist from init SQL)
+    _ch_post(
+        """
+        CREATE TABLE IF NOT EXISTS crm_clients_queue
+        (
+            user_id String,
+            username String,
+            full_name String,
+            email Nullable(String),
+            crm_status String,
+            prosthesis_model String,
+            registered_at Int32,
+            `__deleted` String
+        )
+        ENGINE = Kafka
+        SETTINGS
+            kafka_broker_list = 'kafka:9092',
+            kafka_topic_list = 'crm.public.clients',
+            kafka_group_name = 'clickhouse_crm_clients',
+            kafka_format = 'JSONEachRow',
+            kafka_num_consumers = 1,
+            kafka_skip_broken_messages = 100
+        """
+    )
+    _ch_post(
+        """
+        CREATE TABLE IF NOT EXISTS crm_clients
+        (
+            user_id String,
+            username String,
+            full_name String,
+            email String,
+            crm_status String,
+            prosthesis_model String,
+            registered_at Date,
+            updated_at DateTime DEFAULT now()
+        )
+        ENGINE = ReplacingMergeTree(updated_at)
+        ORDER BY user_id
+        """
+    )
+    _ch_post(
+        """
+        CREATE MATERIALIZED VIEW IF NOT EXISTS crm_clients_mv
+        TO crm_clients
+        AS
+        SELECT
+            user_id,
+            username,
+            full_name,
+            ifNull(email, '') AS email,
+            crm_status,
+            prosthesis_model,
+            toDate(registered_at) AS registered_at,
+            now() AS updated_at
+        FROM crm_clients_queue
+        WHERE `__deleted` != 'true'
+        """
+    )
+    _ch_post(
+        """
+        CREATE TABLE IF NOT EXISTS telemetry_daily
+        (
+            user_id String,
+            username String,
+            report_date Date,
+            usage_hours Float64,
+            movement_count UInt32,
+            calibrations UInt32
+        )
+        ENGINE = MergeTree
+        ORDER BY (username, report_date)
+        """
+    )
+    _ch_post(
+        """
+        CREATE TABLE IF NOT EXISTS report_mart_cdc
+        (
+            user_id String,
+            username String,
+            report_date Date,
+            usage_hours Float64,
+            movement_count UInt32,
+            calibrations UInt32,
+            crm_status String,
+            prosthesis_model String
+        )
+        ENGINE = MergeTree
+        ORDER BY (username, report_date)
+        """
+    )
+    # Recreate MV so JOIN uses latest CRM row (ReplacingMergeTree may keep versions)
+    _ch_post("DROP TABLE IF EXISTS report_mart_cdc_mv")
+    _ch_post(
+        """
+        CREATE MATERIALIZED VIEW report_mart_cdc_mv
+        TO report_mart_cdc
+        AS
+        SELECT
+            t.user_id,
+            t.username,
+            t.report_date,
+            t.usage_hours,
+            t.movement_count,
+            t.calibrations,
+            ifNull(c.crm_status, 'unknown') AS crm_status,
+            ifNull(c.prosthesis_model, 'unknown') AS prosthesis_model
+        FROM telemetry_daily AS t
+        LEFT JOIN
+        (
+            SELECT
+                username,
+                argMax(crm_status, updated_at) AS crm_status,
+                argMax(prosthesis_model, updated_at) AS prosthesis_model
+            FROM crm_clients
+            GROUP BY username
+        ) AS c ON t.username = c.username
+        """
+    )
 
 
 def extract_telemetry(**_context) -> list[dict]:
@@ -154,11 +251,9 @@ def extract_telemetry(**_context) -> list[dict]:
 
 
 def transform_and_load(**context) -> None:
+    """Load telemetry facts; MV joins CRM dim from CDC into report_mart_cdc."""
     ti = context["ti"]
-    crm_rows = ti.xcom_pull(task_ids="extract_crm") or []
     tel_rows = ti.xcom_pull(task_ids="extract_telemetry") or []
-
-    crm_by_user = {c["username"]: c for c in crm_rows}
 
     agg: dict[tuple[str, str], dict] = {}
     for row in tel_rows:
@@ -178,32 +273,32 @@ def transform_and_load(**context) -> None:
         bucket["movement_count"] += row["movement_count"]
         bucket["calibrations"] += row["calibrations"]
 
-    mart_rows: list[dict] = []
+    fact_rows: list[dict] = []
     max_date: date | None = None
     for (_username, report_date_str), bucket in agg.items():
-        crm = crm_by_user.get(bucket["username"], {})
         d = date.fromisoformat(report_date_str)
         if max_date is None or d > max_date:
             max_date = d
-        mart_rows.append(
+        fact_rows.append(
             {
-                "user_id": crm.get("user_id") or bucket["user_id"],
+                "user_id": bucket["user_id"],
                 "username": bucket["username"],
                 "report_date": report_date_str,
                 "usage_hours": round(bucket["usage_hours"], 2),
                 "movement_count": int(bucket["movement_count"]),
                 "calibrations": int(bucket["calibrations"]),
-                "crm_status": crm.get("crm_status", "unknown"),
-                "prosthesis_model": crm.get("prosthesis_model", "unknown"),
             }
         )
 
-    _ch_post("TRUNCATE TABLE IF EXISTS report_mart")
-    if mart_rows:
-        payload = ("\n".join(json.dumps(r, ensure_ascii=False) for r in mart_rows)).encode(
+    # Full reload of facts + mart (MV fills report_mart_cdc on INSERT)
+    _ch_post("TRUNCATE TABLE IF EXISTS report_mart_cdc")
+    _ch_post("TRUNCATE TABLE IF EXISTS telemetry_daily")
+
+    if fact_rows:
+        payload = ("\n".join(json.dumps(r, ensure_ascii=False) for r in fact_rows)).encode(
             "utf-8"
         )
-        _ch_post("INSERT INTO report_mart FORMAT JSONEachRow", data=payload)
+        _ch_post("INSERT INTO telemetry_daily FORMAT JSONEachRow", data=payload)
 
     if max_date:
         processed_to = f"{max_date.isoformat()} 23:59:59"
@@ -220,18 +315,14 @@ def transform_and_load(**context) -> None:
 with DAG(
     dag_id="bionicpro_reports_etl",
     default_args=default_args,
-    description="ETL CRM + telemetry into ClickHouse report mart",
+    description="ETL telemetry → CH; CRM via CDC; MV builds report_mart_cdc",
     schedule_interval="0 2 * * *",
     catchup=False,
-    tags=["bionicpro", "reports", "etl"],
+    tags=["bionicpro", "reports", "etl", "cdc"],
 ) as dag:
     t_schema = PythonOperator(
         task_id="ensure_olap_schema",
         python_callable=ensure_olap_schema,
-    )
-    t_crm = PythonOperator(
-        task_id="extract_crm",
-        python_callable=extract_crm,
     )
     t_tel = PythonOperator(
         task_id="extract_telemetry",
@@ -242,4 +333,4 @@ with DAG(
         python_callable=transform_and_load,
     )
 
-    t_schema >> [t_crm, t_tel] >> t_load
+    t_schema >> t_tel >> t_load

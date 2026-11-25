@@ -75,7 +75,7 @@ def _build_report_from_olap(
             calibrations,
             crm_status,
             prosthesis_model
-        FROM report_mart
+        FROM report_mart_cdc
         WHERE {' AND '.join(where)}
         ORDER BY report_date
         """
@@ -111,7 +111,7 @@ def _build_report_from_olap(
         },
         "totals": totals,
         "days": days,
-        "source": "clickhouse.report_mart",
+        "source": "clickhouse.report_mart_cdc",
     }
 
 
