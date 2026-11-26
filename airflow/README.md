@@ -9,7 +9,6 @@ airflow/
   telemetry-db/init.sql           # seed телеметрии
   clickhouse/init/01_schema.sql   # KafkaEngine, MV, report_mart_cdc
   Dockerfile / requirements.txt
-  scripts/download-wheels.sh
   data/                           # runtime volumes (gitignore)
 ```
 

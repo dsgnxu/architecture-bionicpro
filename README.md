@@ -40,8 +40,7 @@ chmod +x keycloak/scripts/*.sh
 ./keycloak/scripts/configure-yandex-idp.sh
 ```
 
-> Host-порт Keycloak: **8180** (8080 часто занят другими контейнерами).  
-> Сборка `bionicpro-auth`: при проблемах DNS к PyPI сначала `./bionicpro-auth/scripts/download-wheels.sh`.
+> Host-порт Keycloak: **8180** (8080 часто занят другими контейнерами).
 
 Откройте http://localhost:3000 → Login.
 
@@ -172,10 +171,6 @@ DAG [`airflow/dags/bionicpro_reports_etl.py`](airflow/dags/bionicpro_reports_etl
 Расписание: `0 2 * * *` (ежедневно в 02:00). После старта вручную:
 
 ```bash
-# при проблемах DNS в Docker:
-./reports-api/scripts/download-wheels.sh
-./airflow/scripts/download-wheels.sh
-
 docker compose up --build -d
 # UI http://localhost:8081 → DAGs → bionicpro_reports_etl → Trigger
 docker compose exec airflow-scheduler airflow dags trigger bionicpro_reports_etl

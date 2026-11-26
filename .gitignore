@@ -6,9 +6,6 @@ airflow/data/
 __pycache__/
 *.pyc
 .venv/
-bionicpro-auth/wheels/
-reports-api/wheels/
-airflow/wheels/
 keycloak/providers/*.jar
 .DS_Store
 
